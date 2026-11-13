@@ -33,14 +33,18 @@ PDFS = [
         "doc_id": "ai-rmf",
         "title": "NIST AI 100-1: AI Risk Management Framework (AI RMF 1.0)",
         "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+        "short": "AI RMF 1.0",
         "skip_pages": {1, 2, 3},  # cover, title page, "this publication is available" page
+        "toc_until": 6,            # table of contents: don't treat its lines as headings
     },
     {
         "file": "NIST.AI.600-1.pdf",
         "doc_id": "genai-profile",
         "title": "NIST AI 600-1: Generative AI Profile",
         "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.600-1.pdf",
+        "short": "GenAI Profile",
         "skip_pages": {1, 2},
+        "toc_until": 4,
     },
 ]
 
@@ -90,23 +94,63 @@ def split_text(text: str, target: int = TARGET_CHARS, overlap: int = OVERLAP_CHA
     return chunks
 
 
-def pdf_chunks(spec: dict) -> list[dict]:
+# Section headings ("3.2 Safe", "2.7. Human-AI Configuration") and subcategory rows
+# ("GOVERN 1.1: ...") let us prefix each chunk with where it sits in the document.
+# This "contextual chunk header" helps retrieval: a definition buried in a list
+# still carries its section title.
+HEADING_RE = re.compile(r"^(\d{1,2}(?:\.\d{1,2}){0,2})\.?\s+([A-Z][A-Za-z,/&()’' –-]{2,70})$")
+APPENDIX_RE = re.compile(r"^Appendix [A-D]:\s+[A-Z].{3,80}$")
+SUBCAT_RE = re.compile(r"^((?:GOVERN|MAP|MEASURE|MANAGE) \d{1,2}\.\d{1,2}):")
+
+
+def pdf_segments(spec: dict):
+    """Yield (page_no, context, raw_text) runs that share a heading/subcategory."""
     reader = PdfReader(RAW / spec["file"])
-    out = []
+    heading, subcat = "", ""
     for page_no, page in enumerate(reader.pages, start=1):
         if page_no in spec["skip_pages"]:
             continue
-        text = clean(page.extract_text() or "")
-        if len(text) < 80:
+        buf: list[str] = []
+        ctx = " › ".join(p for p in (heading, subcat) if p)
+        for line in unicodedata.normalize("NFKC", page.extract_text() or "").splitlines():
+            s = line.strip()
+            is_heading = page_no > spec["toc_until"] and not s[-1:].isdigit() and \
+                (HEADING_RE.match(s) or APPENDIX_RE.match(s))
+            sub = SUBCAT_RE.match(s)
+            if is_heading or sub:
+                if buf:
+                    yield page_no, ctx, "\n".join(buf)
+                    buf = []
+                if is_heading:
+                    heading, subcat = s, ""
+                else:
+                    subcat = sub.group(1)
+                ctx = " › ".join(p for p in (heading, subcat) if p)
+            buf.append(line)
+        if buf:
+            yield page_no, ctx, "\n".join(buf)
+
+
+def pdf_chunks(spec: dict) -> list[dict]:
+    out, counters = [], {}
+    carry = ""  # tiny segments (e.g. a heading at the bottom of a page) roll forward
+    for page_no, ctx, raw in pdf_segments(spec):
+        text = clean(carry + "\n" + raw) if carry else clean(raw)
+        carry = ""
+        if len(text) < 200:
+            carry = raw
             continue
-        for i, piece in enumerate(split_text(text)):
+        for piece in split_text(text):
+            i = counters.get(page_no, 0)
+            counters[page_no] = i + 1
+            header = f"[{spec['short']}" + (f" › {ctx}" if ctx else "") + "]"
             out.append({
                 "id": f"{spec['doc_id']}-p{page_no}-{i}",
                 "doc_id": spec["doc_id"],
                 "doc_title": spec["title"],
-                "location": f"PDF page {page_no}",
+                "location": f"PDF page {page_no}" + (f", {ctx}" if ctx else ""),
                 "url": f"{spec['url']}#page={page_no}",
-                "text": piece,
+                "text": f"{header}\n{piece}",
             })
     return out
 

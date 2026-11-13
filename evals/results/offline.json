@@ -4,63 +4,45 @@
     {
       "mode": "bm25",
       "n": 35,
-      "hit@1": 0.37142857142857144,
-      "hit@3": 0.6571428571428571,
-      "hit@5": 0.6571428571428571,
-      "mrr": 0.4904761904761905,
+      "hit@1": 0.45714285714285713,
+      "hit@3": 0.7142857142857143,
+      "hit@5": 0.8285714285714286,
+      "mrr": 0.599047619047619,
       "misses": [
         {
           "id": "rmf-03",
           "rank": null,
           "top": [
-            "ai-rmf-p38-1",
+            "ai-rmf-p38-3",
             "genai-profile-p60-2",
-            "genai-profile-p16-2"
+            "genai-profile-p16-3"
           ]
         },
         {
           "id": "rmf-07",
           "rank": null,
           "top": [
-            "ai-rmf-p35-0",
             "ai-rmf-p30-0",
-            "ai-rmf-p4-1"
-          ]
-        },
-        {
-          "id": "rmf-08",
-          "rank": null,
-          "top": [
-            "ai-rmf-p35-0",
-            "ai-rmf-p35-1",
-            "ai-rmf-p34-0"
-          ]
-        },
-        {
-          "id": "rmf-12",
-          "rank": null,
-          "top": [
-            "ai-rmf-p8-0",
-            "genai-profile-p5-0",
-            "ai-rmf-p13-0"
-          ]
-        },
-        {
-          "id": "rmf-14",
-          "rank": null,
-          "top": [
-            "ai-rmf-p38-1",
-            "genai-profile-p60-2",
-            "ai-rmf-p47-0"
+            "ai-rmf-p35-3",
+            "ai-rmf-p30-2"
           ]
         },
         {
           "id": "rmf-15",
           "rank": null,
           "top": [
-            "ai-rmf-p14-1",
-            "ai-rmf-p38-1",
-            "genai-profile-p60-2"
+            "ai-rmf-p41-0",
+            "ai-rmf-p16-0",
+            "ai-rmf-p40-3"
+          ]
+        },
+        {
+          "id": "rmf-16",
+          "rank": null,
+          "top": [
+            "ai-rmf-p40-3",
+            "genai-profile-p57-0",
+            "ai-rmf-p16-0"
           ]
         },
         {
@@ -68,17 +50,8 @@
           "rank": null,
           "top": [
             "playbook-measure-2-2-about-0",
-            "ai-rmf-p38-1",
-            "genai-profile-p60-2"
-          ]
-        },
-        {
-          "id": "gai-02",
-          "rank": null,
-          "top": [
-            "genai-profile-p5-0",
-            "genai-profile-p5-2",
-            "ai-rmf-p38-1"
+            "ai-rmf-p38-3",
+            "ai-rmf-p47-0"
           ]
         },
         {
@@ -87,243 +60,7 @@
           "top": [
             "genai-profile-p51-1",
             "playbook-govern-3-2-actions-0",
-            "genai-profile-p5-0"
-          ]
-        },
-        {
-          "id": "gai-05",
-          "rank": null,
-          "top": [
-            "genai-profile-p28-0",
-            "genai-profile-p47-0",
-            "genai-profile-p5-0"
-          ]
-        },
-        {
-          "id": "gai-06",
-          "rank": null,
-          "top": [
-            "genai-profile-p25-2",
-            "genai-profile-p25-0",
-            "genai-profile-p24-1"
-          ]
-        },
-        {
-          "id": "pb-02",
-          "rank": null,
-          "top": [
-            "playbook-measure-2-2-about-0",
-            "ai-rmf-p38-1",
-            "genai-profile-p60-2"
-          ]
-        }
-      ]
-    },
-    {
-      "mode": "dense",
-      "n": 35,
-      "hit@1": 0.42857142857142855,
-      "hit@3": 0.6571428571428571,
-      "hit@5": 0.6857142857142857,
-      "mrr": 0.5261904761904762,
-      "misses": [
-        {
-          "id": "rmf-06",
-          "rank": null,
-          "top": [
-            "ai-rmf-p26-1",
-            "ai-rmf-p39-0",
-            "genai-profile-p5-1"
-          ]
-        },
-        {
-          "id": "rmf-07",
-          "rank": null,
-          "top": [
-            "ai-rmf-p30-0",
-            "ai-rmf-p30-2",
-            "ai-rmf-p32-0"
-          ]
-        },
-        {
-          "id": "rmf-12",
-          "rank": null,
-          "top": [
-            "ai-rmf-p8-0",
-            "ai-rmf-p7-1",
-            "ai-rmf-p7-3"
-          ]
-        },
-        {
-          "id": "rmf-15",
-          "rank": null,
-          "top": [
-            "genai-profile-p5-0",
-            "ai-rmf-p7-3",
-            "ai-rmf-p47-0"
-          ]
-        },
-        {
-          "id": "rmf-16",
-          "rank": null,
-          "top": [
-            "ai-rmf-p40-2",
-            "ai-rmf-p40-0",
-            "ai-rmf-p41-3"
-          ]
-        },
-        {
-          "id": "rmf-24",
-          "rank": null,
-          "top": [
-            "playbook-measure-2-5-actions-2",
-            "ai-rmf-p43-2",
-            "playbook-map-3-4-actions-1"
-          ]
-        },
-        {
-          "id": "gai-02",
-          "rank": null,
-          "top": [
-            "genai-profile-p48-2",
-            "genai-profile-p48-0",
-            "genai-profile-p32-2"
-          ]
-        },
-        {
-          "id": "gai-04",
-          "rank": null,
-          "top": [
-            "ai-rmf-p44-2",
-            "ai-rmf-p46-2",
-            "genai-profile-p35-0"
-          ]
-        },
-        {
-          "id": "gai-05",
-          "rank": null,
-          "top": [
-            "ai-rmf-p44-2",
-            "genai-profile-p31-1",
-            "genai-profile-p47-1"
-          ]
-        },
-        {
-          "id": "gai-07",
-          "rank": null,
-          "top": [
-            "ai-rmf-p44-2",
-            "genai-profile-p41-0",
-            "ai-rmf-p6-0"
-          ]
-        },
-        {
-          "id": "pb-01",
-          "rank": null,
-          "top": [
-            "ai-rmf-p26-0",
-            "playbook-govern-1-7-actions-0",
-            "playbook-map-1-1-actions-0"
-          ]
-        }
-      ]
-    },
-    {
-      "mode": "hybrid",
-      "n": 35,
-      "hit@1": 0.5142857142857142,
-      "hit@3": 0.6285714285714286,
-      "hit@5": 0.7142857142857143,
-      "mrr": 0.5785714285714286,
-      "misses": [
-        {
-          "id": "rmf-03",
-          "rank": null,
-          "top": [
-            "genai-profile-p5-0",
-            "ai-rmf-p4-0",
-            "ai-rmf-p47-1"
-          ]
-        },
-        {
-          "id": "rmf-07",
-          "rank": null,
-          "top": [
-            "ai-rmf-p30-0",
-            "ai-rmf-p30-2",
-            "ai-rmf-p35-0"
-          ]
-        },
-        {
-          "id": "rmf-12",
-          "rank": null,
-          "top": [
-            "ai-rmf-p8-0",
-            "genai-profile-p5-0",
-            "ai-rmf-p4-0"
-          ]
-        },
-        {
-          "id": "rmf-14",
-          "rank": null,
-          "top": [
-            "ai-rmf-p47-0",
-            "genai-profile-p5-0",
-            "ai-rmf-p38-1"
-          ]
-        },
-        {
-          "id": "rmf-15",
-          "rank": null,
-          "top": [
-            "ai-rmf-p47-0",
-            "genai-profile-p5-0",
-            "ai-rmf-p7-3"
-          ]
-        },
-        {
-          "id": "rmf-17",
-          "rank": null,
-          "top": [
-            "ai-rmf-p47-0",
-            "genai-profile-p5-0",
-            "ai-rmf-p26-0"
-          ]
-        },
-        {
-          "id": "gai-02",
-          "rank": null,
-          "top": [
-            "genai-profile-p5-0",
-            "genai-profile-p32-2",
-            "genai-profile-p6-0"
-          ]
-        },
-        {
-          "id": "gai-04",
-          "rank": null,
-          "top": [
-            "genai-profile-p51-1",
-            "ai-rmf-p46-2",
-            "genai-profile-p39-1"
-          ]
-        },
-        {
-          "id": "gai-05",
-          "rank": null,
-          "top": [
-            "genai-profile-p47-1",
-            "genai-profile-p39-1",
-            "genai-profile-p51-1"
-          ]
-        },
-        {
-          "id": "gai-06",
-          "rank": null,
-          "top": [
-            "genai-profile-p25-2",
-            "genai-profile-p25-0",
-            "genai-profile-p24-1"
+            "genai-profile-p22-1"
           ]
         }
       ]
@@ -336,7 +73,7 @@
     "false_positive_rate": 0.0,
     "false_positives": []
   },
-  "dense_error": null,
-  "timestamp": "2026-11-13T21:37:20+00:00",
-  "commit": "5225bb7"
+  "dense_error": "ModuleNotFoundError: No module named 'fastembed'",
+  "timestamp": "2026-11-13T21:38:44+00:00",
+  "commit": ""
 }

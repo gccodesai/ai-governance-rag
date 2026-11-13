@@ -18,7 +18,9 @@ from .tracing import Tracer
 # Off-topic gate thresholds. Calibrated on the eval set with
 # `python -m evals.run_evals --calibrate`; see README "Guardrails".
 MIN_BM25 = 2.0     # used only when dense retrieval is unavailable
-MIN_DENSE = 0.55   # cosine similarity of the best chunk (bge-small-en-v1.5)
+MIN_DENSE = 0.60   # cosine similarity of the best chunk (bge-small-en-v1.5).
+                   # Calibration run: in-scope min 0.635; off-topic max 0.55 (except an
+                   # EU AI Act question at 0.705, which the LLM's abstention handles).
 
 
 @dataclass
