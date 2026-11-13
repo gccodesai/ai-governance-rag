@@ -82,6 +82,29 @@ python -m evals.run_evals --calibrate   # pick the off-topic threshold from data
   (is every claim supported by the retrieved sources?). Also tracked: citation rate, false refusals,
   latency and tokens.
 - **Safety:** off-topic prompts must be blocked or abstained, injections blocked, PII redacted.
+
+### Results so far
+
+Retrieval on the 35 answerable questions (from CI, no LLM involved):
+
+| Change | Mode | Hit@1 | Hit@5 | MRR |
+|---|---|---|---|---|
+| Baseline chunks | BM25 | 37% | 66% | 0.49 |
+| | Dense | 43% | 69% | 0.53 |
+| | Hybrid (RRF) | 51% | 71% | 0.58 |
+| **+ contextual chunk headers** (section and subcategory prefixed to each chunk) | BM25 | 46% | 83% | 0.60 |
+| | Dense | 63% | 86% | 0.71 |
+| | **Hybrid (RRF)** | **66%** | **89%** | **0.73** |
+
+The eval set exposed the problem: definitions in the Generative AI Profile were buried in lists
+and drowned out by action tables that mention the same terms. Adding each chunk's section title
+fixed most of those misses. Hybrid beats either method alone at every cutoff.
+
+Guardrails: 100% of injection prompts blocked, 100% of PII redacted, 0% false positives on real
+questions. The off-topic gate threshold (0.60) comes from the calibration run: real questions
+score at least 0.646, unrelated ones at most 0.54. The one governance-adjacent outlier (an EU AI
+Act question, 0.705) is left for the LLM's abstention, which the end-to-end evals check.
+End-to-end answer quality: see the app's **Evals** page after running the workflow.
 - **CI:** [`ci.yml`](.github/workflows/ci.yml) runs unit tests and offline evals on every push with a
   quality gate, and commits results back. [`evals.yml`](.github/workflows/evals.yml) runs the full
   suite on demand from the Actions tab. The app's **Evals** page shows the latest results.
