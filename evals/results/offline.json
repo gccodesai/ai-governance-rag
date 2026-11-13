@@ -64,6 +64,107 @@
           ]
         }
       ]
+    },
+    {
+      "mode": "dense",
+      "n": 35,
+      "hit@1": 0.6285714285714286,
+      "hit@3": 0.7428571428571429,
+      "hit@5": 0.8571428571428571,
+      "mrr": 0.7052380952380952,
+      "misses": [
+        {
+          "id": "rmf-06",
+          "rank": null,
+          "top": [
+            "ai-rmf-p26-1",
+            "ai-rmf-p39-0",
+            "ai-rmf-p46-1"
+          ]
+        },
+        {
+          "id": "rmf-12",
+          "rank": null,
+          "top": [
+            "ai-rmf-p7-1",
+            "ai-rmf-p8-0",
+            "ai-rmf-p4-0"
+          ]
+        },
+        {
+          "id": "rmf-16",
+          "rank": null,
+          "top": [
+            "ai-rmf-p40-0",
+            "ai-rmf-p40-1",
+            "ai-rmf-p40-2"
+          ]
+        },
+        {
+          "id": "rmf-24",
+          "rank": null,
+          "top": [
+            "playbook-measure-2-5-actions-2",
+            "playbook-map-3-4-actions-1",
+            "playbook-manage-2-2-actions-0"
+          ]
+        },
+        {
+          "id": "pb-01",
+          "rank": null,
+          "top": [
+            "ai-rmf-p26-0",
+            "playbook-govern-1-7-actions-0",
+            "playbook-map-1-1-actions-0"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "hybrid",
+      "n": 35,
+      "hit@1": 0.6571428571428571,
+      "hit@3": 0.8,
+      "hit@5": 0.8857142857142857,
+      "mrr": 0.7309523809523809,
+      "misses": [
+        {
+          "id": "rmf-03",
+          "rank": null,
+          "top": [
+            "ai-rmf-p47-1",
+            "ai-rmf-p4-0",
+            "ai-rmf-p44-1"
+          ]
+        },
+        {
+          "id": "rmf-07",
+          "rank": null,
+          "top": [
+            "ai-rmf-p30-0",
+            "ai-rmf-p30-2",
+            "ai-rmf-p35-3"
+          ]
+        },
+        {
+          "id": "rmf-16",
+          "rank": null,
+          "top": [
+            "ai-rmf-p40-3",
+            "ai-rmf-p41-3",
+            "ai-rmf-p16-0"
+          ]
+        },
+        {
+          "id": "rmf-17",
+          "rank": null,
+          "top": [
+            "genai-profile-p5-0",
+            "ai-rmf-p7-2",
+            "ai-rmf-p26-0"
+          ]
+        }
+      ]
     }
   ],
   "guardrails": {
@@ -73,7 +174,7 @@
     "false_positive_rate": 0.0,
     "false_positives": []
   },
-  "dense_error": "ModuleNotFoundError: No module named 'fastembed'",
-  "timestamp": "2026-11-13T21:38:44+00:00",
-  "commit": ""
+  "dense_error": null,
+  "timestamp": "2026-11-13T21:41:32+00:00",
+  "commit": "827fa3d"
 }

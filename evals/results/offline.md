@@ -7,8 +7,8 @@ Golden set: 35 answerable questions, 14 adversarial prompts.
 | Mode | Hit@1 | Hit@3 | Hit@5 | MRR |
 |---|---|---|---|---|
 | bm25 | 46% | 71% | 83% | 0.60 |
-
-_Dense retrieval unavailable here: ModuleNotFoundError: No module named 'fastembed'_
+| dense | 63% | 74% | 86% | 0.71 |
+| hybrid | 66% | 80% | 89% | 0.73 |
 
 ### Input guardrails
 
