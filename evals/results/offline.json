@@ -1,0 +1,133 @@
+{
+  "kind": "offline",
+  "retrieval": [
+    {
+      "mode": "bm25",
+      "n": 35,
+      "hit@1": 0.37142857142857144,
+      "hit@3": 0.6571428571428571,
+      "hit@5": 0.6571428571428571,
+      "mrr": 0.4904761904761905,
+      "misses": [
+        {
+          "id": "rmf-03",
+          "rank": null,
+          "top": [
+            "ai-rmf-p38-1",
+            "genai-profile-p60-2",
+            "genai-profile-p16-2"
+          ]
+        },
+        {
+          "id": "rmf-07",
+          "rank": null,
+          "top": [
+            "ai-rmf-p35-0",
+            "ai-rmf-p30-0",
+            "ai-rmf-p4-1"
+          ]
+        },
+        {
+          "id": "rmf-08",
+          "rank": null,
+          "top": [
+            "ai-rmf-p35-0",
+            "ai-rmf-p35-1",
+            "ai-rmf-p34-0"
+          ]
+        },
+        {
+          "id": "rmf-12",
+          "rank": null,
+          "top": [
+            "ai-rmf-p8-0",
+            "genai-profile-p5-0",
+            "ai-rmf-p13-0"
+          ]
+        },
+        {
+          "id": "rmf-14",
+          "rank": null,
+          "top": [
+            "ai-rmf-p38-1",
+            "genai-profile-p60-2",
+            "ai-rmf-p47-0"
+          ]
+        },
+        {
+          "id": "rmf-15",
+          "rank": null,
+          "top": [
+            "ai-rmf-p14-1",
+            "ai-rmf-p38-1",
+            "genai-profile-p60-2"
+          ]
+        },
+        {
+          "id": "rmf-17",
+          "rank": null,
+          "top": [
+            "playbook-measure-2-2-about-0",
+            "ai-rmf-p38-1",
+            "genai-profile-p60-2"
+          ]
+        },
+        {
+          "id": "gai-02",
+          "rank": null,
+          "top": [
+            "genai-profile-p5-0",
+            "genai-profile-p5-2",
+            "ai-rmf-p38-1"
+          ]
+        },
+        {
+          "id": "gai-04",
+          "rank": null,
+          "top": [
+            "genai-profile-p51-1",
+            "playbook-govern-3-2-actions-0",
+            "genai-profile-p5-0"
+          ]
+        },
+        {
+          "id": "gai-05",
+          "rank": null,
+          "top": [
+            "genai-profile-p28-0",
+            "genai-profile-p47-0",
+            "genai-profile-p5-0"
+          ]
+        },
+        {
+          "id": "gai-06",
+          "rank": null,
+          "top": [
+            "genai-profile-p25-2",
+            "genai-profile-p25-0",
+            "genai-profile-p24-1"
+          ]
+        },
+        {
+          "id": "pb-02",
+          "rank": null,
+          "top": [
+            "playbook-measure-2-2-about-0",
+            "ai-rmf-p38-1",
+            "genai-profile-p60-2"
+          ]
+        }
+      ]
+    }
+  ],
+  "guardrails": {
+    "injection_detection_rate": 1.0,
+    "injection_missed": [],
+    "pii_redaction_rate": 1.0,
+    "false_positive_rate": 0.0,
+    "false_positives": []
+  },
+  "dense_error": "ModuleNotFoundError: No module named 'fastembed'",
+  "timestamp": "2026-11-13T21:35:00+00:00",
+  "commit": ""
+}

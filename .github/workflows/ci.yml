@@ -1,0 +1,52 @@
+# On every push: unit tests + offline evals (retrieval quality and guardrails).
+# Needs no API key, so it's free and deterministic. On main, it also commits the
+# refreshed eval results and the precomputed embeddings back to the repo.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test-and-eval:
+    runs-on: ubuntu-latest
+    env:
+      FASTEMBED_CACHE_PATH: /home/runner/.cache/fastembed
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Cache embedding model
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/.cache/fastembed
+          key: fastembed-bge-small-en-v1.5
+
+      - name: Unit tests (fake LLM, no network)
+        run: pytest -q
+
+      - name: Offline evals (retrieval + guardrails), with a quality gate
+        run: python -m evals.run_evals --offline --min-pass-rate 0.6
+
+      - name: Calibrate the off-topic gate
+        run: python -m evals.run_evals --calibrate
+
+      - name: Commit results and embeddings
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add evals/results/offline.* evals/results/calibrate.* data/embeddings.npy data/embeddings.meta.json
+          git diff --cached --quiet || (git commit -m "Update offline eval results and embeddings [skip ci]" && git push)

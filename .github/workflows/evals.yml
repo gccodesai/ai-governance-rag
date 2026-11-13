@@ -1,0 +1,70 @@
+# End-to-end evals with an LLM judge. Run by hand from the Actions tab
+# ("Run workflow"), so free-tier quota is only spent when you choose.
+# Requires the repository secret GEMINI_API_KEY (or GROQ_API_KEY).
+name: End-to-end evals
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Only run the first N cases (blank = all 49)"
+        required: false
+      retrieval_mode:
+        description: "Retrieval mode"
+        type: choice
+        options: [hybrid, bm25, dense]
+        default: hybrid
+      models:
+        description: "Models, comma-separated (blank = defaults)"
+        required: false
+      provider:
+        type: choice
+        options: [gemini, groq]
+        default: gemini
+
+permissions:
+  contents: write
+
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      FASTEMBED_CACHE_PATH: /home/runner/.cache/fastembed
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      LLM_PROVIDER: ${{ inputs.provider }}
+      LLM_MODELS: ${{ inputs.models }}
+      RETRIEVAL_MODE: ${{ inputs.retrieval_mode }}
+      LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
+      LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
+      LANGFUSE_HOST: ${{ secrets.LANGFUSE_HOST || 'https://cloud.langfuse.com' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - uses: actions/cache@v4
+        with:
+          path: /home/runner/.cache/fastembed
+          key: fastembed-bge-small-en-v1.5
+
+      - name: Run end-to-end evals
+        run: python -m evals.run_evals ${{ inputs.limit && format('--limit {0}', inputs.limit) || '' }}
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: evals/results/
+
+      - name: Commit results
+        if: success() && github.ref == 'refs/heads/main' && inputs.limit == ''
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add evals/results/full.*
+          git diff --cached --quiet || (git commit -m "Update end-to-end eval results [skip ci]" && git push)

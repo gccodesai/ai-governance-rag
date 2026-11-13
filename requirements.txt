@@ -1,0 +1,7 @@
+streamlit>=1.50
+requests>=2.31
+rank-bm25>=0.2.2
+numpy>=1.26
+fastembed>=0.5
+pandas>=2.0
+pypdf>=4.0
