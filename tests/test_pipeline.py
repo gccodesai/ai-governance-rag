@@ -81,3 +81,24 @@ def test_feedback_score_recorded(tmp_path):
     tracer.score(t.id, "user_feedback", 1.0)
     traces, scores = tracer.load()
     assert scores[t.id]["value"] == 1.0
+
+
+def test_llm_client_skips_empty_reply_and_falls_back(monkeypatch):
+    from rag.llm import LLMClient
+
+    class R:
+        def __init__(self, text):
+            self.status_code, self.text_ = 200, text
+        def json(self):
+            return {"choices": [{"message": {"content": self.text_}, "finish_reason": "length"}],
+                    "usage": {}}
+
+    sent = []
+    def fake_post(self, model, messages, temperature, max_tokens):
+        sent.append(model)
+        return R("" if model == "gemini-3-flash-preview" else "ok")
+
+    monkeypatch.setattr(LLMClient, "_post", fake_post)
+    c = LLMClient("http://x", "key", ["gemini-3-flash-preview", "gemini-3.1-flash-lite"])
+    assert c.chat([{"role": "user", "content": "hi"}]).model == "gemini-3.1-flash-lite"
+    assert sent == ["gemini-3-flash-preview", "gemini-3.1-flash-lite"]

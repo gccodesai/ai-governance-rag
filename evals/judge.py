@@ -46,7 +46,7 @@ def parse_verdict(text: str) -> dict:
 def judge_answer(client, question: str, reference: str, answer: str, context: str) -> dict:
     prompt = JUDGE_PROMPT.format(question=question, reference=reference,
                                  context=context[:12000], answer=answer)
-    resp = client.chat([{"role": "user", "content": prompt}], max_tokens=300)
+    resp = client.chat([{"role": "user", "content": prompt}], max_tokens=2048)
     try:
         return parse_verdict(resp.text)
     except (ValueError, KeyError, json.JSONDecodeError) as e:

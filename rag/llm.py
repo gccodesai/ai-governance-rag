@@ -42,12 +42,15 @@ class LLMClient:
         self.backoff = backoff
 
     def _post(self, model: str, messages: list[dict], temperature: float, max_tokens: int):
+        body = {"model": model, "messages": messages, "max_tokens": max_tokens}
+        # Google advises keeping Gemini 3 at its default temperature (low values can
+        # cause looping); other models get the deterministic setting we ask for.
+        if not model.startswith("gemini-3"):
+            body["temperature"] = temperature
         return requests.post(
             f"{self.base_url}/chat/completions",
             headers={"Authorization": f"Bearer {self.api_key}"},
-            json={"model": model, "messages": messages,
-                  "temperature": temperature, "max_tokens": max_tokens},
-            timeout=self.timeout,
+            json=body, timeout=self.timeout,
         )
 
     def chat(self, messages: list[dict], temperature: float = 0.0,
@@ -68,6 +71,11 @@ class LLMClient:
                     choice = (data.get("choices") or [{}])[0]
                     text = ((choice.get("message") or {}).get("content") or "").strip()
                     usage = data.get("usage") or {}
+                    if not text:
+                        # e.g. a thinking model spent the whole budget reasoning
+                        errors.append(f"{model}: empty reply (finish_reason="
+                                      f"{choice.get('finish_reason')})")
+                        break
                     return LLMResponse(
                         text=text, model=model,
                         input_tokens=usage.get("prompt_tokens", 0) or 0,

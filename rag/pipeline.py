@@ -61,7 +61,7 @@ class RAGPipeline:
         result.tokens = trace.total_tokens
         return result
 
-    def _generate(self, trace, name: str, messages: list[dict], max_tokens: int = 800):
+    def _generate(self, trace, name: str, messages: list[dict], max_tokens: int = 4096):
         with trace.span(name, kind="generation", input=messages) as s:
             resp = self.llm.chat(messages, max_tokens=max_tokens)
             s.output, s.model = resp.text, resp.model
@@ -101,7 +101,7 @@ class RAGPipeline:
                 convo = "\n".join(f"{m['role']}: {m['content'][:500]}" for m in history[-6:])
                 query = self._generate(trace, "condense_question", [
                     {"role": "user", "content": CONDENSE_PROMPT.format(history=convo, question=clean_q)}
-                ], max_tokens=150) or clean_q
+                ], max_tokens=1024) or clean_q
 
             # 3. Retrieve ----------------------------------------------------
             with trace.span("retrieval", input=query, mode=self.mode) as s:
