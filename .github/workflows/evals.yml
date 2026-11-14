@@ -75,7 +75,7 @@ jobs:
           git commit -m "Update end-to-end eval results [skip ci]"
           # main may have moved while this job ran: rebase onto it, then push.
           for i in 1 2 3; do
-            git pull --rebase -q origin main && git push -q origin HEAD:main && exit 0
+            git pull --rebase -X theirs -q origin main && git push -q origin HEAD:main && exit 0
             sleep 5
           done
           exit 1

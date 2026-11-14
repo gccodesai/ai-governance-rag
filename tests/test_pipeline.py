@@ -128,3 +128,29 @@ def test_relevance_gate_works_in_bm25_mode_with_embeddings(retriever, tmp_path):
     assert on_topic.ask("What does the MAP function do?").status == "answered"
     off_topic = RAGPipeline(_DenseStub(retriever, 0.40), FakeLLM([]), Tracer(tmp_path), mode="bm25")
     assert off_topic.ask("What is the capital of France?").status == "blocked"
+
+
+def test_daily_quota_falls_back_without_waiting(monkeypatch):
+    import time as _time
+    from rag.llm import LLMClient
+
+    class R:
+        def __init__(self, code, text, body=""):
+            self.status_code, self.text, self._t, self.headers = code, body, text, {}
+        def json(self):
+            return {"choices": [{"message": {"content": self._t}}], "usage": {}}
+
+    def fake_post(self, model, *a):
+        if model == "primary":
+            return R(429, "", '{"error": {"details": [{"quotaId": "GenerateRequestsPerDayPerProjectPerModel-FreeTier"}]}}')
+        return R(200, "fallback answer")
+
+    monkeypatch.setattr(LLMClient, "_post", fake_post)
+    monkeypatch.setattr(_time, "sleep", lambda s: (_ for _ in ()).throw(AssertionError("slept")))
+    resp = LLMClient("http://x", "k", ["primary", "backup"]).chat([{"role": "user", "content": "q"}])
+    assert resp.model == "backup" and resp.attempts == 2
+
+
+def test_result_reports_answering_model(retriever, tmp_path):
+    p, _, _ = make(retriever, ["GOVERN is cross-cutting [1]."], tmp_path)
+    assert p.ask("What is the GOVERN function?").model == "fake-model"

@@ -139,6 +139,7 @@ def run_full(settings: Settings, limit: int | None, sleep: float) -> tuple[dict,
         res = pipeline.ask(c["question"])
         row = {"id": c["id"], "type": c["type"], "status": res.status,
                "latency_ms": res.latency_ms, "tokens": res.tokens, "trace_id": res.trace_id,
+               "model": res.model,
                "answer": res.answer, "guardrails": [g.as_dict() for g in res.guardrails]}
         if c["type"] == "answerable":
             rel = relevant_ids(c, chunks)
@@ -161,7 +162,8 @@ def run_full(settings: Settings, limit: int | None, sleep: float) -> tuple[dict,
         with partial.open("a", encoding="utf-8") as f:
             f.write(json.dumps(row, default=str) + "\n")
         print(f"[{i}/{len(cases)}] {time.time() - started:6.0f}s  {c['id']:8} {res.status:9} "
-              f"{'PASS' if row['passed'] else 'FAIL'}  ({res.latency_ms / 1000:.1f}s)", flush=True)
+              f"{'PASS' if row['passed'] else 'FAIL'}  ({res.latency_ms / 1000:.1f}s, {res.model or '-'})",
+              flush=True)
         time.sleep(sleep)  # stay under free-tier requests-per-minute limits
 
     ans = [r for r in rows if r["type"] == "answerable"]

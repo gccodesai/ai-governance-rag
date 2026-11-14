@@ -80,3 +80,14 @@ def test_output_blocks_prompt_leak():
 def test_output_abstention():
     _, res = G.check_output(ABSTAIN_TOKEN, 5)
     assert any(r.name == "abstained" for r in res)
+
+
+def test_answer_that_mentions_token_is_not_an_abstention():
+    answer, res = G.check_output("GOVERN 1.1 covers legal requirements [1]. NOT_IN_SOURCES", 5)
+    assert not any(r.name == "abstained" for r in res)
+    assert "NOT_IN_SOURCES" not in answer and "[1]" in answer
+
+
+@pytest.mark.parametrize("reply", ["NOT_IN_SOURCES", "NOT_IN_SOURCES.", "**NOT_IN_SOURCES**\n"])
+def test_bare_token_is_an_abstention(reply):
+    assert G.is_abstention(reply)

@@ -35,7 +35,8 @@ def render_details(msg: dict, idx: int) -> None:
     flagged = [g for g in r["guardrails"] if g["action"] != "allow"]
     line = [STATUS_BADGE.get(r["status"], r["status"])]
     line += [f":violet-badge[{g['name']}: {g['action']}]" for g in flagged]
-    line.append(f"{r['latency_ms'] / 1000:.1f}s · {r['tokens']} tokens")
+    line.append(f"{r['latency_ms'] / 1000:.1f}s · {r['tokens']} tokens"
+                + (f" · `{r['model']}`" if r.get("model") else ""))
     st.markdown(" ".join(line))
 
     if r["sources"]:
@@ -89,7 +90,7 @@ if question:
         "role": "assistant", "content": res.answer, "question": question,
         "result": {
             "status": res.status, "trace_id": res.trace_id, "latency_ms": res.latency_ms,
-            "tokens": res.tokens, "cited": res.cited, "query": res.query,
+            "tokens": res.tokens, "cited": res.cited, "query": res.query, "model": res.model,
             "guardrails": [g.as_dict() for g in res.guardrails],
             "sources": [{"doc_title": h.chunk.doc_title, "url": h.chunk.url, "location": h.chunk.location,
                          "text": h.chunk.text, "score": h.score, "bm25": h.bm25, "dense": h.dense}

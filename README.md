@@ -166,7 +166,7 @@ evals/
   results/        # latest results (committed by CI, shown in the app)
 app.py, pages/    # Streamlit chat, Traces dashboard, Evals dashboard
 scripts/ingest.py # PDFs + Playbook → cleaned, overlapping chunks
-tests/            # 43 unit tests with a fake LLM: fast, free, offline
+tests/            # 49 unit tests with a fake LLM: fast, free, offline
 ```
 
 ## Design decisions

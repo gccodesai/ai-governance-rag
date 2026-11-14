@@ -83,6 +83,9 @@ class LLMClient:
                         output_tokens=usage.get("completion_tokens", 0) or 0,
                         latency_s=time.perf_counter() - start, attempts=attempts,
                     )
+                if r.status_code == 429 and self._daily_quota_exhausted(r):
+                    errors.append(f"{model}: daily free-tier quota used up")
+                    break  # waiting won't help today: fall back immediately
                 if r.status_code in RETRYABLE and attempt < self.retries:
                     time.sleep(self._retry_delay(r, attempt))
                     continue
@@ -90,14 +93,19 @@ class LLMClient:
                 break  # non-retryable (or out of retries): try the next model
         raise LLMError("All models failed:\n" + "\n".join(errors))
 
+    @staticmethod
+    def _daily_quota_exhausted(r) -> bool:
+        body = getattr(r, "text", "") or ""
+        return "PerDay" in body or "per day" in body.lower()
+
     def _retry_delay(self, r, attempt: int) -> float:
-        """Use the server's hint (Retry-After header or Gemini's retryDelay), capped at 60s."""
+        """Use the server's hint (Retry-After header or Gemini's retryDelay), capped at 20s."""
         hint = r.headers.get("Retry-After") if hasattr(r, "headers") else None
         if not hint:
             m = re.search(r'"retryDelay":\s*"(\d+(?:\.\d+)?)s"', getattr(r, "text", "") or "")
             hint = m.group(1) if m else None
         try:
-            return min(float(hint), 60.0)
+            return min(float(hint), 20.0)
         except (TypeError, ValueError):
             return self.backoff * (2 ** attempt)
 

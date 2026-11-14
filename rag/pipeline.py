@@ -34,6 +34,7 @@ class ChatResult:
     trace_id: str = ""
     latency_ms: float = 0.0
     tokens: int = 0
+    model: str = ""                              # model that wrote the answer
 
 
 class RAGPipeline:
@@ -59,6 +60,8 @@ class RAGPipeline:
         result.trace_id = trace.id
         result.latency_ms = trace.duration_ms
         result.tokens = trace.total_tokens
+        result.model = next((s.model for s in reversed(trace.spans)
+                             if s.kind == "generation" and s.model), "")
         return result
 
     def _generate(self, trace, name: str, messages: list[dict], max_tokens: int = 4096):
@@ -142,7 +145,7 @@ class RAGPipeline:
         if any(g.blocked for g in out_checks):
             return self._finish(trace, ChatResult(BLOCKED_MESSAGES["prompt_leak"], "blocked",
                                                   sources=hits, guardrails=results, query=query))
-        if ABSTAIN_TOKEN in answer:
+        if answer == ABSTAIN_TOKEN:
             return self._finish(trace, ChatResult(ABSTAIN_MESSAGE, "abstained", sources=hits,
                                                   guardrails=results, query=query))
         return self._finish(trace, ChatResult(answer, "answered", sources=hits,

@@ -148,10 +148,12 @@ def check_output(answer: str, n_sources: int) -> tuple[str, list[GuardrailResult
             return answer, results
     results.append(GuardrailResult("prompt_leak", ALLOW))
 
-    # 2. Abstention: the model said the sources don't cover it.
-    if ABSTAIN_TOKEN in answer:
+    # 2. Abstention: the reply is just the token. If the model wrote a real answer and
+    #    also appended the token, keep the answer and drop the token.
+    if is_abstention(answer):
         results.append(GuardrailResult("abstained", WARN, "sources do not cover the question"))
-        return answer, results
+        return ABSTAIN_TOKEN, results
+    answer = answer.replace(ABSTAIN_TOKEN, "").strip()
 
     # 3. Citations must exist and point at real sources.
     cited = [int(n) for n in CITATION_RE.findall(answer)]
@@ -170,6 +172,11 @@ def check_output(answer: str, n_sources: int) -> tuple[str, list[GuardrailResult
         pii.name = "pii_output"
         results.append(pii)
     return answer, results
+
+
+def is_abstention(answer: str) -> bool:
+    rest = re.sub(r"[\W_]+", " ", answer.replace(ABSTAIN_TOKEN, "")).strip()
+    return ABSTAIN_TOKEN in answer and len(rest) < 25
 
 
 def cited_sources(answer: str) -> list[int]:
