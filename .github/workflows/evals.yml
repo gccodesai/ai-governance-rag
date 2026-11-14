@@ -71,4 +71,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add evals/results/full.*
-          git diff --cached --quiet || (git commit -m "Update end-to-end eval results [skip ci]" && git push)
+          git diff --cached --quiet && exit 0
+          git commit -m "Update end-to-end eval results [skip ci]"
+          # main may have moved while this job ran: rebase onto it, then push.
+          for i in 1 2 3; do
+            git pull --rebase -q origin main && git push -q origin HEAD:main && exit 0
+            sleep 5
+          done
+          exit 1
