@@ -112,7 +112,9 @@ class RAGPipeline:
             # 4. Relevance guardrail (cheap: no LLM call if clearly off-topic) -
             with trace.span("relevance_guardrail") as s:
                 kw = self.retriever.max_keyword_overlap(query)
-                dense = max((h.dense for h in hits), default=0.0) if self.retriever.dense_available else None
+                # Scored independently of the search mode: in "bm25" mode the hits
+                # carry no dense score, and reading 0.0 from them blocked everything.
+                dense = self.retriever.max_dense_similarity(query)
                 rel = G.check_relevance(kw, dense, self.min_bm25, self.min_dense)
                 results.append(rel)
                 s.output = rel.as_dict()

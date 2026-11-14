@@ -102,3 +102,29 @@ def test_llm_client_skips_empty_reply_and_falls_back(monkeypatch):
     c = LLMClient("http://x", "key", ["gemini-3-flash-preview", "gemini-3.1-flash-lite"])
     assert c.chat([{"role": "user", "content": "hi"}]).model == "gemini-3.1-flash-lite"
     assert sent == ["gemini-3-flash-preview", "gemini-3.1-flash-lite"]
+
+
+class _DenseStub:
+    """Wraps the BM25 retriever and pretends embeddings are loaded."""
+
+    def __init__(self, inner, similarity):
+        self._inner, self._sim = inner, similarity
+        self.chunks, self.dense_available = inner.chunks, True
+
+    def search(self, query, k=5, mode="hybrid"):
+        return self._inner.search(query, k=k, mode="bm25")   # hits carry dense=0.0
+
+    def max_keyword_overlap(self, query):
+        return self._inner.max_keyword_overlap(query)
+
+    def max_dense_similarity(self, query):
+        return self._sim
+
+
+def test_relevance_gate_works_in_bm25_mode_with_embeddings(retriever, tmp_path):
+    """Regression: bm25 mode used to read dense=0.0 from hits and block every question."""
+    on_topic = RAGPipeline(_DenseStub(retriever, 0.80), FakeLLM(["MAP frames context [1]."]),
+                           Tracer(tmp_path), mode="bm25")
+    assert on_topic.ask("What does the MAP function do?").status == "answered"
+    off_topic = RAGPipeline(_DenseStub(retriever, 0.40), FakeLLM([]), Tracer(tmp_path), mode="bm25")
+    assert off_topic.ask("What is the capital of France?").status == "blocked"

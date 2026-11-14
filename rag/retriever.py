@@ -151,6 +151,12 @@ class Retriever:
         return [Hit(chunk=self.chunks[i], score=fused[i], bm25=float(bm25[i]),
                     dense=float(dense[i]) if dense is not None else 0.0) for i in top]
 
+    def max_dense_similarity(self, query: str) -> float | None:
+        """Cosine similarity of the closest chunk, or None without embeddings."""
+        if not self.dense_available:
+            return None
+        return float(max(self._dense_scores(query)))
+
     def max_keyword_overlap(self, query: str) -> float:
         """Best BM25 score for the query; 0 means no shared terms with the corpus."""
         scores = self._bm25_scores(query)
