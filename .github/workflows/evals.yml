@@ -17,6 +17,9 @@ on:
       models:
         description: "Models, comma-separated (blank = defaults)"
         required: false
+      judge_model:
+        description: "Judge model (blank = gemini-3.1-flash-lite: fast, generous free quota)"
+        required: false
       provider:
         type: choice
         options: [gemini, groq]
@@ -28,7 +31,7 @@ permissions:
 jobs:
   evals:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     env:
       FASTEMBED_CACHE_PATH: /home/runner/.cache/fastembed
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -36,6 +39,7 @@ jobs:
       LLM_PROVIDER: ${{ inputs.provider }}
       LLM_MODELS: ${{ inputs.models }}
       RETRIEVAL_MODE: ${{ inputs.retrieval_mode }}
+      JUDGE_MODEL: ${{ inputs.judge_model || (inputs.provider == 'gemini' && 'gemini-3.1-flash-lite' || '') }}
       LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
       LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
       LANGFUSE_HOST: ${{ secrets.LANGFUSE_HOST || 'https://cloud.langfuse.com' }}

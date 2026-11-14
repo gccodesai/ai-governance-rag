@@ -133,12 +133,18 @@ def pdf_segments(spec: dict):
 
 def pdf_chunks(spec: dict) -> list[dict]:
     out, counters = [], {}
-    carry = ""  # tiny segments (e.g. a heading at the bottom of a page) roll forward
+    carry, carry_ctx = "", ""  # tiny segments (e.g. one short table row) roll forward
     for page_no, ctx, raw in pdf_segments(spec):
-        text = clean(carry + "\n" + raw) if carry else clean(raw)
-        carry = ""
+        if carry:
+            # Keep the label of the merged-in segment too, e.g. "GOVERN 1.1 + GOVERN 1.2".
+            if carry_ctx and carry_ctx != ctx:
+                ctx = f"{carry_ctx} + {ctx.split(' › ')[-1]}" if ctx else carry_ctx
+            text = clean(carry + "\n" + raw)
+        else:
+            text = clean(raw)
+        carry, carry_ctx = "", ""
         if len(text) < 200:
-            carry = raw
+            carry, carry_ctx = raw, ctx
             continue
         for piece in split_text(text):
             i = counters.get(page_no, 0)

@@ -5,6 +5,7 @@ No SDK: one HTTP POST, a hard timeout, retries with backoff, and fallback models
 
 from __future__ import annotations
 
+import re
 import time
 from dataclasses import dataclass
 
@@ -83,11 +84,22 @@ class LLMClient:
                         latency_s=time.perf_counter() - start, attempts=attempts,
                     )
                 if r.status_code in RETRYABLE and attempt < self.retries:
-                    time.sleep(self.backoff * (2 ** attempt))
+                    time.sleep(self._retry_delay(r, attempt))
                     continue
                 errors.append(f"{model}: HTTP {r.status_code} {r.text[:200]}")
                 break  # non-retryable (or out of retries): try the next model
         raise LLMError("All models failed:\n" + "\n".join(errors))
+
+    def _retry_delay(self, r, attempt: int) -> float:
+        """Use the server's hint (Retry-After header or Gemini's retryDelay), capped at 60s."""
+        hint = r.headers.get("Retry-After") if hasattr(r, "headers") else None
+        if not hint:
+            m = re.search(r'"retryDelay":\s*"(\d+(?:\.\d+)?)s"', getattr(r, "text", "") or "")
+            hint = m.group(1) if m else None
+        try:
+            return min(float(hint), 60.0)
+        except (TypeError, ValueError):
+            return self.backoff * (2 ** attempt)
 
     def list_models(self) -> list[str]:
         """Model ids the key can use; handy when a free-tier model gets retired."""

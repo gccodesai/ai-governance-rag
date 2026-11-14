@@ -131,6 +131,10 @@ def run_full(settings: Settings, limit: int | None, sleep: float) -> tuple[dict,
                       timeout=settings.request_timeout)
     chunks = pipeline.retriever.chunks
     rows = []
+    RESULTS.mkdir(parents=True, exist_ok=True)
+    partial = RESULTS / "full.partial.jsonl"   # survives a timeout or cancel
+    partial.write_text("")
+    started = time.time()
     for i, c in enumerate(cases, 1):
         res = pipeline.ask(c["question"])
         row = {"id": c["id"], "type": c["type"], "status": res.status,
@@ -154,8 +158,10 @@ def run_full(settings: Settings, limit: int | None, sleep: float) -> tuple[dict,
                 ok = ok and any(g["name"] == "pii" and g["action"] == G.REDACT for g in row["guardrails"])
             row["passed"] = ok
         rows.append(row)
-        print(f"[{i}/{len(cases)}] {c['id']:8} {res.status:9} {'PASS' if row['passed'] else 'FAIL'}",
-              flush=True)
+        with partial.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(row, default=str) + "\n")
+        print(f"[{i}/{len(cases)}] {time.time() - started:6.0f}s  {c['id']:8} {res.status:9} "
+              f"{'PASS' if row['passed'] else 'FAIL'}  ({res.latency_ms / 1000:.1f}s)", flush=True)
         time.sleep(sleep)  # stay under free-tier requests-per-minute limits
 
     ans = [r for r in rows if r["type"] == "answerable"]
@@ -239,7 +245,7 @@ def main() -> int:
     g.add_argument("--offline", action="store_true", help="retrieval + guardrail metrics only (no LLM)")
     g.add_argument("--calibrate", action="store_true", help="suggest the off-topic threshold")
     p.add_argument("--limit", type=int, help="only run the first N cases")
-    p.add_argument("--sleep", type=float, default=4.0, help="seconds between cases (free-tier rate limits)")
+    p.add_argument("--sleep", type=float, default=1.0, help="seconds between cases (free-tier rate limits)")
     p.add_argument("--min-pass-rate", type=float, default=0.0,
                    help="exit non-zero if the headline metric falls below this (CI quality gate)")
     args = p.parse_args()

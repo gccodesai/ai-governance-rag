@@ -33,6 +33,8 @@ involve involves purpose explain tell give list according
 """.split())
 
 TOKEN_RE = re.compile(r"[a-z0-9]+(?:\.[0-9]+)*")
+SUBCAT_RE = re.compile(r"\b(GOVERN|MAP|MEASURE|MANAGE)\s*(\d{1,2}\.\d{1,2})(?!\d)", re.IGNORECASE)
+DOC_PRIORITY = {"ai-rmf": 0, "playbook": 1, "genai-profile": 2}
 
 
 def tokenize(text: str) -> list[str]:
@@ -62,6 +64,7 @@ class Hit:
     score: float          # fused score used for ranking
     bm25: float = 0.0
     dense: float = 0.0
+    pinned: bool = False  # surfaced by exact subcategory-ID lookup
 
 
 def load_chunks(path: Path = CHUNKS_PATH) -> list[Chunk]:
@@ -82,6 +85,7 @@ class Retriever:
                  embeddings_path: Path = EMBEDDINGS_PATH):
         self.chunks = chunks
         self.bm25 = BM25Okapi([tokenize(c.text) for c in chunks])
+        self.by_subcat = self._index_subcategories(chunks)
         self.dense_error: str | None = None
         self._model = None
         self._matrix = None
@@ -91,6 +95,26 @@ class Retriever:
             except Exception as e:  # missing package, offline, etc.
                 self.dense_error = f"{type(e).__name__}: {e}"
                 log.warning("Dense retrieval disabled: %s", self.dense_error)
+
+    @staticmethod
+    def _index_subcategories(chunks: list[Chunk]) -> dict[str, list[int]]:
+        """Map "GOVERN 1.1" -> chunks whose header line is labelled with it."""
+        index: dict[str, list[int]] = {}
+        for i, c in enumerate(chunks):
+            header = c.text.split("\n", 1)[0]
+            for fn, num in SUBCAT_RE.findall(header):
+                index.setdefault(f"{fn.upper()} {num}", []).append(i)
+        for ids in index.values():  # framework text first, then Playbook, then GenAI tables
+            ids.sort(key=lambda i: DOC_PRIORITY.get(chunks[i].doc_id, 9))
+        return index
+
+    def subcategory_matches(self, query: str, limit: int = 3) -> list[int]:
+        out: list[int] = []
+        for fn, num in SUBCAT_RE.findall(query):
+            for i in self.by_subcat.get(f"{fn.upper()} {num}", []):
+                if i not in out:
+                    out.append(i)
+        return out[:limit]
 
     @property
     def dense_available(self) -> bool:
@@ -147,9 +171,23 @@ class Retriever:
             for scores in (bm25, dense):
                 for rank, i in enumerate(ranking(scores)[:50]):
                     fused[i] = fused.get(i, 0.0) + 1.0 / (RRF_K + rank + 1)
-        top = sorted(fused, key=fused.get, reverse=True)[:k]
-        return [Hit(chunk=self.chunks[i], score=fused[i], bm25=float(bm25[i]),
-                    dense=float(dense[i]) if dense is not None else 0.0) for i in top]
+        # Exact-ID lookup: "What does GOVERN 1.1 say?" should always surface the
+        # chunks labelled GOVERN 1.1; embeddings can't reliably tell 1.1 from 1.10.
+        # One chunk per section (framework text, Playbook About/Actions/...), and the
+        # question's wording decides which: "suggested actions" favours the Actions chunk.
+        pinned, seen = [], set()
+        for i in sorted(self.subcategory_matches(query, limit=50), key=lambda i: -bm25[i]):
+            loc = (self.chunks[i].doc_id, self.chunks[i].location)
+            if loc not in seen:
+                seen.add(loc)
+                pinned.append(i)
+        pinned = pinned[: max(1, k // 2 + 1)]
+        ranked = sorted(fused, key=fused.get, reverse=True)
+        top = pinned + [i for i in ranked if i not in pinned][: k - len(pinned)]
+        best = max(fused.values(), default=0.0)
+        return [Hit(chunk=self.chunks[i], score=best if i in pinned else fused.get(i, 0.0),
+                    bm25=float(bm25[i]), dense=float(dense[i]) if dense is not None else 0.0,
+                    pinned=i in pinned) for i in top]
 
     def max_dense_similarity(self, query: str) -> float | None:
         """Cosine similarity of the closest chunk, or None without embeddings."""

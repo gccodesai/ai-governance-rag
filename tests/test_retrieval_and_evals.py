@@ -39,3 +39,17 @@ def test_judge_parsing():
     assert v == {"correctness": 4, "faithfulness": "yes", "reason": "ok"}
     with pytest.raises(ValueError):
         parse_verdict('{"correctness": 9, "faithfulness": "yes"}')
+
+
+@pytest.mark.parametrize("mode", ["bm25", "hybrid", "dense"])
+def test_subcategory_id_lookup(retriever, mode):
+    hits = retriever.search("what does govern 1.1 say", k=5, mode=mode)
+    assert hits[0].pinned and "GOVERN 1.1" in hits[0].chunk.text.split("\n", 1)[0]
+    assert sum(h.pinned for h in hits) == 3
+
+
+def test_subcategory_lookup_is_exact(retriever):
+    assert retriever.subcategory_matches("MEASURE 2.1")
+    for i in retriever.subcategory_matches("MEASURE 2.1", limit=10):
+        header = retriever.chunks[i].text.split("\n", 1)[0]
+        assert "MEASURE 2.1" in header and "MEASURE 2.10" not in header.replace("MEASURE 2.1 ", "")
