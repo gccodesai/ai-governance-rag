@@ -154,3 +154,45 @@ def test_daily_quota_falls_back_without_waiting(monkeypatch):
 def test_result_reports_answering_model(retriever, tmp_path):
     p, _, _ = make(retriever, ["GOVERN is cross-cutting [1]."], tmp_path)
     assert p.ask("What is the GOVERN function?").model == "fake-model"
+
+
+def test_fallback_across_providers(monkeypatch):
+    from rag import Settings, build_llm
+    from rag.llm import LLMClient
+
+    class R:
+        def __init__(self, code, text):
+            self.status_code, self.text, self._t, self.headers = code, text, text, {}
+        def json(self):
+            return {"choices": [{"message": {"content": self._t}}], "usage": {}}
+
+    def fake_post(self, model, *a):
+        return R(429, "quota PerDay") if "gemini" in model else R(200, f"answer from {model}")
+
+    monkeypatch.setattr(LLMClient, "_post", fake_post)
+    s = Settings.from_env(provider="gemini", api_key="g", backup_keys={"groq": "q"})
+    llm = build_llm(s)
+    assert llm.chat([{"role": "user", "content": "q"}]).model == "llama-3.3-70b-versatile"
+    # Without a backup key there is no chain to fall back to.
+    assert len(build_llm(Settings.from_env(provider="gemini", api_key="g", backup_keys={})).clients) == 1
+
+
+def test_timeout_is_retried_once(monkeypatch):
+    import requests
+    from rag.llm import LLMClient
+    calls = []
+
+    class R:
+        status_code, text, headers = 200, "", {}
+        def json(self):
+            return {"choices": [{"message": {"content": "ok"}}], "usage": {}}
+
+    def fake_post(self, model, *a):
+        calls.append(model)
+        if len(calls) == 1:
+            raise requests.ReadTimeout()
+        return R()
+
+    monkeypatch.setattr(LLMClient, "_post", fake_post)
+    assert LLMClient("http://x", "k", ["m"]).chat([{"role": "user", "content": "q"}]).text == "ok"
+    assert calls == ["m", "m"]

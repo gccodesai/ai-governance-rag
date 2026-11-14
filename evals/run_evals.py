@@ -28,9 +28,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from rag import Settings, build_pipeline, load_chunks                      # noqa: E402
+from rag import Settings, build_llm, build_pipeline, load_chunks                      # noqa: E402
 from rag import guardrails as G                                             # noqa: E402
-from rag.llm import LLMClient, LLMError                                     # noqa: E402
+from rag.llm import LLMError                                     # noqa: E402
 from rag.retriever import Retriever                                         # noqa: E402
 from evals.judge import judge_answer                                        # noqa: E402
 
@@ -126,9 +126,8 @@ def run_full(settings: Settings, limit: int | None, sleep: float) -> tuple[dict,
         raise SystemExit("Full evals need an API key (GEMINI_API_KEY or GROQ_API_KEY).")
     cases = load_golden()[:limit] if limit else load_golden()
     pipeline = build_pipeline(settings, trace_dir=RESULTS / "traces")
-    judge = LLMClient(settings.base_url, settings.api_key,
-                      [settings.judge_model] if settings.judge_model else settings.models,
-                      timeout=settings.request_timeout)
+    judge = build_llm(settings, [settings.judge_model] + [m for m in settings.models
+                                  if m != settings.judge_model] if settings.judge_model else None)
     chunks = pipeline.retriever.chunks
     rows = []
     RESULTS.mkdir(parents=True, exist_ok=True)

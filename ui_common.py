@@ -60,13 +60,22 @@ def sidebar_settings() -> Settings:
             help="Free keys: aistudio.google.com/apikey (Gemini) or console.groq.com/keys (Groq). "
                  "Your key stays in this browser session.")
         api_key = key or os.environ.get(spec["key_env"], "")
+        other = [p for p in PROVIDERS if p != provider][0]
+        other_env = PROVIDERS[other]["key_env"]
+        with st.expander(f"Backup provider ({other.title()})"):
+            backup = st.text_input(f"{other.title()} API key (optional)", type="password",
+                                   placeholder="Using the app's key" if os.environ.get(other_env) else "",
+                                   help="Used automatically if every model of the main provider fails, "
+                                        "e.g. when a free daily quota runs out.")
         default_models = base.models if provider == base.provider else spec["models"]
         models = st.text_input("Models (primary, fallbacks)", ", ".join(default_models))
         mode = st.radio("Retrieval", ["hybrid", "bm25", "dense"], horizontal=True,
                         help="hybrid = keyword (BM25) + semantic embeddings, fused with RRF")
         top_k = st.slider("Chunks to retrieve", 2, 10, base.top_k)
 
+        backup_key = backup or os.environ.get(other_env, "")
         settings = Settings.from_env(provider=provider, api_key=api_key,
+                                     backup_keys={other: backup_key} if backup_key else {},
                                      models=[m.strip() for m in models.split(",") if m.strip()],
                                      retrieval_mode=mode, top_k=top_k)
 
@@ -86,6 +95,7 @@ def sidebar_settings() -> Settings:
         retriever = get_retriever()
         st.caption(
             f"Dense retrieval: {'on' if retriever.dense_available else 'off (BM25 fallback)'}  \n"
+            f"Backup provider: {other.title() if settings.backup_keys else 'none'}  \n"
             f"Langfuse tracing: {'on' if settings.langfuse_enabled else 'off (local traces only)'}  \n"
             f"Corpus: {len(retriever.chunks)} chunks from 3 NIST sources"
         )

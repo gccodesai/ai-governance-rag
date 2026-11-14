@@ -127,9 +127,13 @@ End-to-end answer quality: see the app's **Evals** page after running the workfl
    ```toml
    GEMINI_API_KEY = "your-key"
    ```
+   Also add a free [Groq](https://console.groq.com/keys) key as `GROQ_API_KEY`: it's the
+   automatic backup when Gemini's daily free quota runs out.
    (See [`.streamlit/secrets.toml.example`](.streamlit/secrets.toml.example) for optional settings.)
 3. **Enable end-to-end evals:** repo **Settings → Secrets and variables → Actions** → add
-   `GEMINI_API_KEY`. Then **Actions → End-to-end evals → Run workflow**.
+   `GEMINI_API_KEY` (and `GROQ_API_KEY`). Then **Actions → End-to-end evals → Run workflow**.
+   A full run makes about 100 LLM calls, which can use up a free model's daily quota, so run it
+   sparingly or pick `groq` as the provider.
 4. **(Optional) Langfuse:** sign up at [cloud.langfuse.com](https://cloud.langfuse.com), create a
    project and API keys, then add `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` to both the
    Streamlit secrets and the GitHub Actions secrets.
@@ -166,7 +170,7 @@ evals/
   results/        # latest results (committed by CI, shown in the app)
 app.py, pages/    # Streamlit chat, Traces dashboard, Evals dashboard
 scripts/ingest.py # PDFs + Playbook → cleaned, overlapping chunks
-tests/            # 49 unit tests with a fake LLM: fast, free, offline
+tests/            # 51 unit tests with a fake LLM: fast, free, offline
 ```
 
 ## Design decisions
@@ -180,6 +184,10 @@ tests/            # 49 unit tests with a fake LLM: fast, free, offline
   quota and removes a whole class of failure. The LLM's own abstention is the second line of defence.
 - **Evals that can't lie quietly.** Reference evidence is quoted verbatim and machine-checked, and the
   off-topic threshold is calibrated from data rather than guessed.
+- **Built for flaky free tiers.** Free models have small daily quotas and get retired without
+  notice. The client retries transient errors, honours rate-limit hints, skips a model whose
+  daily quota is used up, falls back through several models, then to a second provider
+  (Gemini → Groq). The UI shows which model answered.
 - **Free end to end.** Streamlit Community Cloud, GitHub Actions, free LLM tiers, a local ONNX
   embedding model and Langfuse's free tier.
 

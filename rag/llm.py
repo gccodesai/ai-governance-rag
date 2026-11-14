@@ -65,6 +65,9 @@ class LLMClient:
                 try:
                     r = self._post(model, messages, temperature, max_tokens)
                 except requests.RequestException as e:
+                    if isinstance(e, (requests.Timeout, requests.ConnectionError)) \
+                            and attempt < self.retries:
+                        continue  # transient: try the same model again
                     errors.append(f"{model}: network error ({type(e).__name__})")
                     break
                 if r.status_code == 200:
@@ -115,3 +118,29 @@ class LLMClient:
                          headers={"Authorization": f"Bearer {self.api_key}"}, timeout=15)
         r.raise_for_status()
         return sorted(m["id"].removeprefix("models/") for m in r.json().get("data", []))
+
+
+class FallbackLLM:
+    """Tries several providers in order, e.g. Gemini first, then Groq.
+
+    Free tiers have small per-model daily quotas; a second provider keeps the app
+    answering when the first one runs out.
+    """
+
+    def __init__(self, clients: list[LLMClient]):
+        if not clients:
+            raise LLMError("No API key configured.")
+        self.clients = clients
+
+    @property
+    def models(self) -> list[str]:
+        return [m for c in self.clients for m in c.models]
+
+    def chat(self, messages: list[dict], **kwargs) -> LLMResponse:
+        errors = []
+        for client in self.clients:
+            try:
+                return client.chat(messages, **kwargs)
+            except LLMError as e:
+                errors.append(str(e).removeprefix("All models failed:\n"))
+        raise LLMError("All models failed:\n" + "\n".join(errors))

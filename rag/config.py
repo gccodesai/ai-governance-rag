@@ -16,7 +16,7 @@ PROVIDERS = {
     "gemini": {
         "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
         "key_env": "GEMINI_API_KEY",
-        "models": ["gemini-3-flash-preview", "gemini-3.1-flash-lite"],
+        "models": ["gemini-3-flash-preview", "gemini-3.1-flash-lite", "gemini-3.1-flash-lite-preview"],
     },
     "groq": {
         "base_url": "https://api.groq.com/openai/v1",
@@ -41,6 +41,7 @@ class Settings:
     retrieval_mode: str = "hybrid"                     # "hybrid" | "bm25" | "dense"
     max_question_chars: int = 1000
     request_timeout: float = 60.0
+    backup_keys: dict = field(default_factory=dict)    # provider -> key, used as fallbacks
     langfuse_public_key: str = ""
     langfuse_secret_key: str = ""
     langfuse_host: str = "https://cloud.langfuse.com"
@@ -66,6 +67,8 @@ class Settings:
             judge_model=os.environ.get("JUDGE_MODEL") or None,
             top_k=int(os.environ.get("TOP_K", 5)),
             retrieval_mode=os.environ.get("RETRIEVAL_MODE", "hybrid"),
+            backup_keys={name: os.environ[p["key_env"]] for name, p in PROVIDERS.items()
+                         if name != provider and os.environ.get(p["key_env"])},
             langfuse_public_key=os.environ.get("LANGFUSE_PUBLIC_KEY", ""),
             langfuse_secret_key=os.environ.get("LANGFUSE_SECRET_KEY", ""),
             langfuse_host=os.environ.get("LANGFUSE_HOST", "https://cloud.langfuse.com").rstrip("/"),
