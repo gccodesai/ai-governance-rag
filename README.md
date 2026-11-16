@@ -5,7 +5,7 @@ Management Framework**, its **Generative AI Profile** and the **AI RMF Playbook*
 Every answer cites its sources. Unsafe or off-topic requests are stopped by guardrails,
 accuracy is measured by an automated eval suite, and each request is traced step by step.
 
-**Live demo:** _add your Streamlit link here_ · **Cost to run:** $0
+**Live demo:** [Try it live](https://ai-governance-rag-gpfampw6k8z72xbgx6wby3.streamlit.app/) · **Cost to run:** $0
 
 ![CI](https://github.com/gccodesai/ai-governance-rag/actions/workflows/ci.yml/badge.svg)
 
@@ -13,7 +13,7 @@ accuracy is measured by an automated eval suite, and each request is traced step
 
 | Capability | How it's done here |
 |---|---|
-| **RAG** | 626 chunks from 3 NIST sources; hybrid retrieval (BM25 keyword + `bge-small` embeddings, fused with Reciprocal Rank Fusion); answers grounded in numbered sources with `[n]` citations |
+| **RAG** | 679 chunks from 3 NIST sources, each prefixed with its section; hybrid retrieval (BM25 keyword + `bge-small` embeddings, fused with Reciprocal Rank Fusion) plus exact lookup of subcategory IDs like "GOVERN 1.1"; answers grounded in numbered sources with `[n]` citations |
 | **Guardrails** | 4 input checks + 4 output checks, deterministic and unit-tested (table below) |
 | **Evals** | Hand-checked golden set: 35 questions with reference answers + 14 adversarial prompts. Retrieval metrics (Hit@k, MRR), LLM-as-judge correctness and faithfulness, guardrail pass rates, run in GitHub Actions |
 | **Observability** | Every request is a trace of timed spans (guardrails → rewrite → retrieval → LLM → guardrails) with tokens, models and user 👍/👎. Viewable in the app, and exported to Langfuse |
@@ -162,10 +162,10 @@ pytest
 ```
 rag/
   pipeline.py     # orchestration: guardrails → rewrite → retrieve → generate → guardrails
-  retriever.py    # BM25 + fastembed dense search, RRF fusion, embedding cache
+  retriever.py    # BM25 + fastembed dense search, RRF fusion, subcategory-ID lookup, embedding cache
   guardrails.py   # input/output checks (each returns an explainable GuardrailResult)
   tracing.py      # traces & spans, JSONL sink, Langfuse exporter, feedback scores
-  llm.py          # ~100-line HTTP client for Gemini/Groq: timeouts, retries, model fallback
+  llm.py          # ~150-line HTTP client: timeouts, retries, model and provider (Gemini → Groq) fallback
   prompts.py      # system prompt, refusal messages
 evals/
   golden.jsonl    # 49 hand-checked cases
@@ -182,8 +182,11 @@ tests/            # 52 unit tests with a fake LLM: fast, free, offline
 - **No framework, no SDKs.** The pipeline is about 150 readable lines, so every step is visible and
   traceable. The LLM client is plain HTTP against OpenAI-compatible endpoints, so switching between
   Gemini and Groq is a config change.
-- **Hybrid retrieval.** Keyword search nails exact IDs like "GOVERN 1.1", embeddings handle paraphrases,
+- **Hybrid retrieval.** Keyword search catches exact terms, embeddings handle paraphrases,
   and RRF combines them without having to tune score scales. The eval suite measures each mode.
+- **Look up exact IDs instead of searching for them.** Embeddings can't reliably tell "GOVERN 1.1"
+  from "GOVERN 1.10", so a question naming a subcategory pulls that subcategory's chunks
+  directly, in every retrieval mode.
 - **Gate before generating.** Blocking injections and off-topic questions before the LLM call saves
   quota and removes a whole class of failure. The LLM's own abstention is the second line of defence.
 - **Evals that can't lie quietly.** Reference evidence is quoted verbatim and machine-checked, and the
