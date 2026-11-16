@@ -111,6 +111,9 @@ End-to-end answer quality: see the app's **Evals** page after running the workfl
 
 ## Observability
 
+- **Private by default:** visitors see only their own session's traces; the owner unlocks all of
+  them with `ADMIN_PASSWORD` (a Streamlit secret). PII is redacted *before* anything is logged,
+  locally or in Langfuse.
 - **Built in:** the **Traces** page shows request volume, median and p95 latency, tokens, outcome mix,
   guardrail triggers and 👍 rate, plus a per-request timeline with each step's input and output.
 - **Langfuse (optional, free Hobby plan):** add `LANGFUSE_PUBLIC_KEY` / `LANGFUSE_SECRET_KEY` and the
@@ -127,6 +130,7 @@ End-to-end answer quality: see the app's **Evals** page after running the workfl
    ```toml
    GEMINI_API_KEY = "your-key"
    ```
+   Add `ADMIN_PASSWORD = "..."` to see every visitor's traces (others only see their own).
    Also add a free [Groq](https://console.groq.com/keys) key as `GROQ_API_KEY`: it's the
    automatic backup when Gemini's daily free quota runs out.
    (See [`.streamlit/secrets.toml.example`](.streamlit/secrets.toml.example) for optional settings.)
@@ -170,7 +174,7 @@ evals/
   results/        # latest results (committed by CI, shown in the app)
 app.py, pages/    # Streamlit chat, Traces dashboard, Evals dashboard
 scripts/ingest.py # PDFs + Playbook → cleaned, overlapping chunks
-tests/            # 51 unit tests with a fake LLM: fast, free, offline
+tests/            # 52 unit tests with a fake LLM: fast, free, offline
 ```
 
 ## Design decisions

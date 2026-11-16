@@ -196,3 +196,14 @@ def test_timeout_is_retried_once(monkeypatch):
     monkeypatch.setattr(LLMClient, "_post", fake_post)
     assert LLMClient("http://x", "k", ["m"]).chat([{"role": "user", "content": "q"}]).text == "ok"
     assert calls == ["m", "m"]
+
+
+def test_traces_never_contain_raw_pii(retriever, tmp_path):
+    p, llm, tracer = make(retriever, ["What is GOVERN?", "GOVERN is cross-cutting [1]."], tmp_path)
+    history = [{"role": "user", "content": "I'm bob@corp.com, phone 415-555-0134"},
+               {"role": "assistant", "content": "Hi!"}]
+    p.ask("Email jane@example.com: what is the GOVERN function?", history=history)
+    logged = tracer.path.read_text()
+    sent = json.dumps(llm.calls)
+    for secret in ("jane@example.com", "bob@corp.com", "415-555-0134"):
+        assert secret not in logged and secret not in sent

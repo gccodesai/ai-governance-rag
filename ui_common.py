@@ -12,7 +12,7 @@ from rag.config import PROVIDERS, TRACE_DIR
 from rag.llm import LLMClient
 
 SECRET_KEYS = ["GEMINI_API_KEY", "GROQ_API_KEY", "LLM_PROVIDER", "LLM_MODELS", "JUDGE_MODEL",
-               "LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY", "LANGFUSE_HOST"]
+               "LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY", "LANGFUSE_HOST", "ADMIN_PASSWORD"]
 
 STATUS_BADGE = {
     "answered": ":green-badge[answered]",

@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import hmac
 import json
+import os
 import statistics
 from collections import Counter
 from datetime import datetime
@@ -12,18 +14,44 @@ import streamlit as st
 
 from rag.config import TRACE_DIR
 from rag.tracing import Tracer
-from ui_common import load_secrets_into_env
+from ui_common import load_secrets_into_env, session_id
 
 st.set_page_config(page_title="Traces · AI Governance Assistant", page_icon="🔍", layout="wide")
 load_secrets_into_env()
 st.title("🔍 Traces")
-st.caption("Every chat request is traced step by step: guardrails, retrieval, LLM calls. "
-           "These local traces reset when the app restarts; with Langfuse keys set, "
-           "the same traces are also kept in your Langfuse project.")
+
+# ---------------------------------------------------------------- access control
+# Visitors see only their own session's traces. The app owner sets ADMIN_PASSWORD
+# in the Streamlit secrets and unlocks every trace from the sidebar.
+admin_pw = os.environ.get("ADMIN_PASSWORD", "")
+with st.sidebar:
+    if st.session_state.get("is_admin"):
+        st.success("Admin view: all sessions")
+        if st.button("Lock", width="stretch"):
+            st.session_state.is_admin = False
+            st.rerun()
+    elif admin_pw:
+        with st.form("admin"):
+            pw = st.text_input("Admin password", type="password")
+            if st.form_submit_button("Unlock all traces") and pw:
+                if hmac.compare_digest(pw.encode(), admin_pw.encode()):
+                    st.session_state.is_admin = True
+                    st.rerun()
+                st.error("Wrong password.")
+is_admin = bool(st.session_state.get("is_admin"))
+
+st.caption(("Showing **all sessions** (admin)." if is_admin else
+            "Showing **only your session's** requests; other visitors can't see them.")
+           + " Every chat request is traced step by step: guardrails, retrieval, LLM calls. "
+           "Personal details are redacted before anything is logged.")
 
 traces, scores = Tracer(TRACE_DIR).load(limit=500)
+if not is_admin:
+    mine = session_id()
+    traces = [t for t in traces if t.get("session_id") == mine]
+    scores = {k: v for k, v in scores.items() if any(t["id"] == k for t in traces)}
 if not traces:
-    st.info("No traces yet. Ask a question on the chat page, then come back.")
+    st.info("No traces yet for this session. Ask a question on the chat page, then come back.")
     st.stop()
 
 # ---------------------------------------------------------------- health metrics

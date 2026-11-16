@@ -76,12 +76,15 @@ class RAGPipeline:
     def ask(self, question: str, history: list[dict] | None = None,
             session_id: str | None = None) -> ChatResult:
         history = history or []
-        trace = self.tracer.start("chat", input=question, session_id=session_id,
+        # Redact PII before anything is logged: traces (local and Langfuse) only
+        # ever see the cleaned question.
+        safe_q = G.redact_pii(question)[0]
+        trace = self.tracer.start("chat", input=safe_q, session_id=session_id,
                                   retrieval_mode=self.mode, top_k=self.top_k)
         results: list[G.GuardrailResult] = []
 
         # 1. Input guardrails ------------------------------------------------
-        with trace.span("input_guardrails", input=question) as s:
+        with trace.span("input_guardrails", input=safe_q) as s:
             results.append(G.check_length(question, self.max_question_chars))
             if not results[-1].blocked:
                 results.append(G.check_injection(question))
@@ -101,7 +104,8 @@ class RAGPipeline:
             # 2. Make follow-ups standalone ("what about the second one?") ----
             query = clean_q
             if history:
-                convo = "\n".join(f"{m['role']}: {m['content'][:500]}" for m in history[-6:])
+                convo = "\n".join(f"{m['role']}: {G.redact_pii(m['content'][:500])[0]}"
+                                  for m in history[-6:])
                 query = self._generate(trace, "condense_question", [
                     {"role": "user", "content": CONDENSE_PROMPT.format(history=convo, question=clean_q)}
                 ], max_tokens=1024) or clean_q
